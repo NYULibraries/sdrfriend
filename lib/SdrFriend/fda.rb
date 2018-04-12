@@ -40,7 +40,7 @@ require 'figs'
       ## Converts between a handle and a dspace_id
       def translate_handle_to_dspace_id(handle)
         ## Three possible patterns:
-        # http://handle.net/2451/12345
+        # http://hdl.handle.net/2451/12345
         # nyu_2451_12345
         # nyu-2451-12345
         if /^https?:\/\/hdl.handle.net\/\d{4}\/\d{5}$/.match(handle)

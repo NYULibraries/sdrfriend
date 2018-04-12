@@ -14,8 +14,8 @@ namespace :fda do
     puts JSON.generate(client.grab_item_metadata(args[:identifier]))
   end
 
-  desc 'Upload a bitstream; <identifier> argument optional if handle can be extracted from filename'
-  task :upload, :file_path, :identifier do |t, args|
+  desc 'Add a single bitstream; <identifier> argument optional IF handle can be extracted from filename'
+  task :addbit, :file_path, :identifier do |t, args|
     client = SdrFriend::Fda.new
     puts JSON.generate(client.upload_bitstream(args[:file_path], args[:identifier]))
   end
@@ -50,5 +50,35 @@ namespace :fda do
     end
 
   end
+
+
+
+
+end
+
+
+namespace :metadata do
+
+  desc "Add FDA bitstream URLs to CSV"
+  task :biturl, :csv_input, :csv_output do |t, args|
+
+  end
+
+  desc "Convert CSV to single JSON record collection file"
+  task :csv_to_json, :csv_input, :csv_output do |t, args|
+
+  end
+
+  desc "Split-out JSON record collection file into multiple individual geoblacklight.json files"
+  task :split, :json_input, :destination_path do |t, args|
+
+  end
+
+  desc "Create a blank template CSV for collection"
+  task :template, :csv_output do |t, args|
+
+  end
+
+
 
 end
