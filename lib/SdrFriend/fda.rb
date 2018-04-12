@@ -24,13 +24,13 @@ require 'figs'
 
       ## Authenticates with DSpace API
       def grab_token(username, password)
-        cmd = `curl -X POST -H "Content-Type: application/json" -d '{"email":"#{username}","password":"#{password}"}' #{ENV["FDA_REST_ENDPOINT"]}/login --insecure`
+        cmd = `curl -X POST -H "Content-Type: application/json" -d '{"email":"#{username}","password":"#{password}"}' #{ENV["FDA_REST_ENDPOINT"]}/login --insecure -s`
         return cmd
       end
 
       ## Retrieves a handle -> dspace_id lookup table
       def grab_lookup_table(csv_url)
-        cmd = `curl #{csv_url}`
+        cmd = `curl #{csv_url} -s`
         csv = CSV.parse(cmd)
         table = {}
         csv.each{ |row| table[row[0]] = row[1]}
@@ -59,7 +59,7 @@ require 'figs'
         if is_handle?(identifier)
           dspace_id = translate_handle_to_dspace_id(identifier)
         end
-        cmd = `curl -X GET -H "Content-Type: application/json" -H "Accept: application/json" -H "rest-dspace-token: #{@token}" #{ENV["FDA_REST_ENDPOINT"]}/items/#{dspace_id}?expand=all --insecure`
+        cmd = `curl -X GET -H "Content-Type: application/json" -H "Accept: application/json" -H "rest-dspace-token: #{@token}" #{ENV["FDA_REST_ENDPOINT"]}/items/#{dspace_id}?expand=all --insecure -s`
         JSON.parse(cmd)
       end
 
@@ -73,6 +73,36 @@ require 'figs'
         else
           return false
         end
+      end
+
+      ## "Mint" a new record with a Handle
+      def create_container(collection, container=nil)
+        active_container = container
+        if active_container.nil?
+          active_container = {
+              "metadata": [
+                  {
+                      "key": "dc.title",
+                      "language": "en_US",
+                      "value": "Empty Container Document"
+                  },
+                  {
+                      "key": "dc.contributor.author",
+                      "language": "en_US",
+                      "value": "Data Services, Bobst Library"
+                  }
+              ]
+          }
+        end
+        cmd = `curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "rest-dspace-token: #{@token}" -d '#{JSON.generate(active_container)}' #{ENV["FDA_REST_ENDPOINT"]}/collections/#{collection}/items --insecure -s`
+        return JSON.parse(cmd)
+      end
+
+      ## Modify (add or replace) metadata elements on an FDA
+      # record
+      def alter_metadata(identifier, metadata_record)
+        dspace_id = identifier
+        cmd = cmd = `curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "rest-dspace-token: #{@token}" -d '#{JSON.generate(metadata_record)}' #{ENV["FDA_REST_ENDPOINT"]}/items/#{dspace_id}/metadata --insecure -s`
       end
 
 
@@ -93,6 +123,30 @@ require 'figs'
         raise "Could not upload bitstream"
       end
 
+      def delete_bitstream(identifier, bitstream_filename)
+        record = grab_item_metadata(identifier)
+        bitstreams_to_delete = find_bitstream_ids(record, bitstream_filename)
+        bitstreams_to_delete.each do |bs_id|
+          puts "Deleting #{bs_id}..."
+          _delete_bitstream(bs_id)
+        end
+      end
+
+      def _delete_bitstream(bitstream_id)
+        cmd = `curl -X DELETE -H "Accept: application/json" -H "rest-dspace-token: #{@token}" #{ENV["FDA_REST_ENDPOINT"]}/bitstreams/#{bitstream_id} --insecure -s`
+        return cmd
+      end
+
+      def find_bitstream_ids(fda_metadata, bitstream_name)
+        bitstream_ids = []
+        fda_metadata['bitstreams'].each do |bitstream|
+          if bitstream['name'] == bitstream_name
+            bitstream_ids << bitstream['id']
+          end
+        end
+        return bitstream_ids
+      end
+
       def bitstream_exists?(fda_metadata, bitstream_name)
         fda_metadata['bitstreams'].each do |bitstream|
           if bitstream['name'] == bitstream_name
@@ -108,10 +162,11 @@ require 'figs'
       end
 
       private
-      def upload_bitstream_to_dspace(absolute_path_to_file, dspace_id)
-        filename = File.basename(absolute_path_to_file)
-        cmd = `curl --data-binary "@#{absolute_path_to_file}" -H "Accept: application/json" -H "rest-dspace-token: #{@token}" #{ENV["FDA_REST_ENDPOINT"]}/items/#{dspace_id}/bitstreams?name=#{filename} --insecure`
-        return cmd
+
+      def upload_bitstream_to_dspace(path_to_file, dspace_id)
+        filename = File.basename(path_to_file)
+        cmd = `curl --data-binary "@#{path_to_file}" -H "Accept: application/json" -H "rest-dspace-token: #{@token}" #{ENV["FDA_REST_ENDPOINT"]}/items/#{dspace_id}/bitstreams?name=#{filename} --insecure`
+        return JSON.parse(cmd)
       end
 
       def handle_to_dspace(handle)

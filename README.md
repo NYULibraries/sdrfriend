@@ -19,10 +19,23 @@ And then execute:
 Or install it yourself as:
 
     $ gem install SdrFriend
+    
+## Using it as a command line interface (via Rake)
 
-## Usage
+```bash
+rake fda:get["nyu_2451_34626"]
+```
 
-TODO: Write usage instructions here
+
+## Using it as a library
+
+### SdrFriend::Fda
+This provides an interface to the Faculty Digital Archive's DSpace REST API.
+
+```ruby
+require 'SdrFriend/fda'
+client = SdrFriend::Fda.new
+```
 
 ## Development
 
