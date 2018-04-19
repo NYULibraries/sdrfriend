@@ -1,6 +1,8 @@
 require "bundler/gem_tasks"
 require "rspec/core/rake_task"
 require "SdrFriend/fda"
+require "SdrFriend/metadata"
+require "find"
 
 RSpec::Core::RakeTask.new(:spec)
 
@@ -14,8 +16,8 @@ namespace :fda do
     puts JSON.generate(client.grab_item_metadata(args[:identifier]))
   end
 
-  desc 'Upload a bitstream; <identifier> argument optional if handle can be extracted from filename'
-  task :upload, :file_path, :identifier do |t, args|
+  desc 'Add a single bitstream; <identifier> argument optional IF handle can be extracted from filename'
+  task :addbit, :file_path, :identifier do |t, args|
     client = SdrFriend::Fda.new
     puts JSON.generate(client.upload_bitstream(args[:file_path], args[:identifier]))
   end
@@ -50,5 +52,108 @@ namespace :fda do
     end
 
   end
+
+end
+
+
+namespace :metadata do
+
+  desc "Generate CSV from set of JSON records"
+  task :gencsv, :repository_path, :csv_output do |t, args|
+    paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
+    collection = []
+    paths.each do |path|
+      collection << JSON.parse(File.read(path))
+    end
+
+    if args[:csv_output].nil?
+      ## Pipe out to stdout if no :csv_output present
+      puts SdrFriend::Metadata.collection_to_csv(collection)
+    else
+      File.open(args[:csv_output], "w") do |f|
+        f.write(SdrFriend::Metadata.collection_to_csv(collection))
+      end
+    end
+  end
+
+  desc "Add FDA bitstream URLs to JSON records"
+  task :bithydrate, :repository_path do |t, args|
+    paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
+    collection = []
+    paths.each do |path|
+      collection << JSON.parse(File.read(path))
+    end
+    SdrFriend::Metadata.bitstream_hydrate(collection)
+    puts JSON.pretty_generate(collection)
+  end
+
+  desc "Alphabetize keys in records"
+  task :alphabetize, :repository_path do |t, args|
+    paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
+    collection = []
+    paths.each do |path|
+      collection << JSON.parse(File.read(path))
+    end
+    alpha = SdrFriend::Metadata.alphabetize_keys(collection)
+    puts JSON.pretty_generate(alpha)
+  end
+
+  desc "Alphabetize keys in records in place (saves back to original)"
+  task :alpha_in_place, :repository_path do |t, args|
+    paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
+    paths.each do |path|
+      record = JSON.parse(File.read(path)).sort.to_h
+      File.open(path, "w") do |f|
+        f.write(JSON.pretty_generate(record))
+      end
+    end
+  end
+
+  desc "Add DSpace IDs in records in place (saves back to original)"
+  task :dspace_in_place, :repository_path do |t, args|
+  paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
+  paths.each_with_index do |path, idx|
+    puts idx
+    record = JSON.parse(File.read(path))
+    if record['nyu_addl_dspace_s'].nil?
+      record = SdrFriend::Metadata.bitstream_hydrate([record])[0]
+      File.open(path, "w") do |f|
+        f.write(JSON.pretty_generate(record))
+      end
+    end
+  end
+end
+
+  desc "Convert CSV to single JSON record collection file"
+  task :csv_to_json, :csv_input, :json_output do |t, args|
+    table = CSV.parse(File.read(args[:csv_input]), headers: true)
+    collection = []
+    table.each do |row|
+      collection << SdrFriend::Metadata.row_to_rec(row)
+    end
+
+    if args[:json_output].nil?
+      ## Pipe out to stdout if no :json_output present
+      puts JSON.pretty_generate(collection)
+    else
+      File.open(args[:json_output], "w") do |f|
+        f.write(JSON.pretty_generate(collection))
+      end
+    end
+
+
+  end
+
+  desc "Split-out JSON record collection file into multiple individual geoblacklight.json files"
+  task :split, :json_input, :destination_path do |t, args|
+
+  end
+
+  desc "Create a blank template CSV for collection"
+  task :template, :csv_output do |t, args|
+
+  end
+
+
 
 end

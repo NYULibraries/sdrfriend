@@ -6,3 +6,5 @@ module SdrFriend
 end
 
 require 'SdrFriend/fda'
+require 'SdrFriend/metadata'
+require 'SdrFriend/geoserver'
