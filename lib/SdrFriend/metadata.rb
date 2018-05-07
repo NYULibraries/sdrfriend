@@ -207,6 +207,10 @@ module SdrFriend
       return collection
     end
 
+    def self.create_solr_geom(w, e, n, s)
+      return "ENVELOPE(#{w}, #{e}, #{n}, #{s})"
+    end
+
 
 
     private
