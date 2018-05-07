@@ -34,26 +34,26 @@ namespace :fda do
     puts client.translate_handle_to_dspace_id(args[:handle])
   end
 
-  desc 'Create a SINGLE container record / "mint" a new handle; collection should be "public" or "restricted"'
-  task :mint, :collection do |t, args|
-    client = SdrFriend::Fda.new
-    collection = nil
-    if !args[:collection].nil?
-      if args[:collection].downcase == "public"
-        collection = 651
-      elsif args[:collection].downcase == "restricted"
-        collection = 652
-      else
-        raise "Unable to detect a valid collection name"
-      end
-      puts JSON.generate(client.create_container(collection))
-    else
-      raise "Unable to detect a valid collection name"
-    end
-  end
+  # desc 'Create a SINGLE container record / "mint" a new handle; collection should be "public" or "restricted"'
+  # task :mint, :collection do |t, args|
+  #   client = SdrFriend::Fda.new
+  #   collection = nil
+  #   if !args[:collection].nil?
+  #     if args[:collection].downcase == "public"
+  #       collection = 651
+  #     elsif args[:collection].downcase == "restricted"
+  #       collection = 652
+  #     else
+  #       raise "Unable to detect a valid collection name"
+  #     end
+  #     puts JSON.generate(client.create_container(collection))
+  #   else
+  #     raise "Unable to detect a valid collection name"
+  #   end
+  # end
 
-  desc 'Create MULTIPLE container records / "mint" new handles; collection should be "public" or "restricted"'
-  task :mint_many, :collection, :number do |t, args|
+  desc 'Create multiple container records / "mint" new handles; collection should be "public" or "restricted"'
+  task :mint, :collection, :number, :csv_output do |t, args|
     client = SdrFriend::Fda.new
     collection = nil
     if !args[:collection].nil?
@@ -71,11 +71,16 @@ namespace :fda do
           created << client.create_container(collection)
         end
       end
-      lines = ["dspace-internal,handle"]
+      lines = []
       created.each do |container|
-        lines << "#{container['id']},#{container['handle']}"
+        lines << [client.standardize_handle_url(container['handle']), container['id']]
       end
-      puts lines.join("\n")
+      puts lines.map{ |x| x.join(",")}.join("\n")
+      unless args[:csv_output].nil?
+        CSV.open(args[:csv_output], "w") do |csv|
+          lines.map{ |x| csv << x}
+        end
+      end
     else
       raise "Unable to detect a valid collection name"
     end

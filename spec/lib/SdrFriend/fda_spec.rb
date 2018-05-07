@@ -18,6 +18,34 @@ RSpec.describe SdrFriend::Fda do
     end
   end
 
+  describe "#standardize_handle_url" do
+    it "converts 1234/56789 format handle into a valid handle URL" do
+      client = SdrFriend::Fda.new(false)
+      expect(client.standardize_handle_url("1234/56789")).to eq("http://hdl.handle.net/1234/56789")
+    end
+
+    it "converts nyu-1234-56789 format handle into a valid handle URL" do
+      client = SdrFriend::Fda.new(false)
+      expect(client.standardize_handle_url("nyu-1234-56789")).to eq("http://hdl.handle.net/1234/56789")
+    end
+
+    it "converts nyu_1234_56789 format handle into a valid handle URL" do
+      client = SdrFriend::Fda.new(false)
+      expect(client.standardize_handle_url("nyu_1234_56789")).to eq("http://hdl.handle.net/1234/56789")
+    end
+
+    it "doesn't alter an input that is already a handle url" do
+      client = SdrFriend::Fda.new(false)
+      expect(client.standardize_handle_url("http://hdl.handle.net/1234/56789")).to eq("http://hdl.handle.net/1234/56789")
+    end
+
+    it "rejects handles of other formats" do
+      client = SdrFriend::Fda.new(false)
+      expect {client.standardize_handle_url("clearly-wrong-input!")}.to raise_error(RuntimeError)
+    end
+
+  end
+
   describe "#is_handle?" do
     it "detects handles of format nyu-1234-56789" do
       client = SdrFriend::Fda.new(false)
