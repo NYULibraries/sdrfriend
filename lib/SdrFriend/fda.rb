@@ -165,6 +165,23 @@ module SdrFriend
 
     end
 
+    def standardize_handle_url(input)
+      if /^http:\/\/hdl.handle.net\/\d{4}\/\d{5}$/.match(input)
+        return input
+      elsif /^nyu-\d{4}-\d{5}$/.match(input)
+        components = input.split("-")
+        return "http://hdl.handle.net/#{components[1]}/#{components[2]}"
+      elsif /^nyu_\d{4}_\d{5}$/.match(input)
+        components = input.split("_")
+        return "http://hdl.handle.net/#{components[1]}/#{components[2]}"
+      elsif /^\d{4}\/\d{5}$/.match(input)
+        components = input.split("/")
+        return "http://hdl.handle.net/#{components[0]}/#{components[1]}"
+      else
+        raise "No handle detected!"
+      end
+    end
+
     private
 
     def upload_bitstream_to_dspace(path_to_file, dspace_id)
