@@ -50,8 +50,38 @@ namespace :fda do
     else
       raise "Unable to detect a valid collection name"
     end
-
   end
+
+  desc 'Create MULTIPLE container records / "mint" new handles; collection should be "public" or "restricted"'
+  task :mint_many, :collection, :number do |t, args|
+    client = SdrFriend::Fda.new
+    collection = nil
+    if !args[:collection].nil?
+      if args[:collection].downcase == "public"
+        collection = 651
+      elsif args[:collection].downcase == "restricted"
+        collection = 652
+      else
+        raise "Unable to detect a valid collection name"
+      end
+      created = []
+      num = args[:number].to_i
+      if num > 0
+        num.times do |n|
+          created << client.create_container(collection)
+        end
+      end
+      lines = ["dspace-internal,handle"]
+      created.each do |container|
+        lines << "#{container['id']},#{container['handle']}"
+      end
+      puts lines.join("\n")
+    else
+      raise "Unable to detect a valid collection name"
+    end
+  end
+
+
 
 end
 
