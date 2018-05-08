@@ -211,6 +211,48 @@ module SdrFriend
       return "ENVELOPE(#{w}, #{e}, #{n}, #{s})"
     end
 
+    def self.geoblacklight_to_fda_elements(gbl_record)
+      fda_elem = [
+          {
+              "key": "dc.type",
+              "language": "en_US",
+              "value": "Dataset"
+          }
+      ]
+      gbl_record.each do |k,v|
+        if k == "dc_title_s"
+          fda_elem << {
+              "key": "dc.title",
+              "language": "en_US",
+              "value": v
+          }
+        elsif k == "dc_creator_sm"
+          v.each do |author|
+            fda_elem << {
+                "key": "dc.contributor.author",
+                "language": "en_US",
+                "value": author
+            }
+          end
+        elsif k == "dc_description_s"
+          fda_elem << {
+              "key": "dc.description",
+              "language": "en_US",
+              "value": v
+          }
+        elsif k == "dc_subject_sm"
+          v.each do |subject|
+            fda_elem << {
+                "key": "dc.subject",
+                "language": "en_US",
+                "value": subject
+            }
+          end
+        end
+      end
+      return fda_elem
+    end
+
 
 
     private

@@ -1,6 +1,7 @@
 require 'csv'
 require 'json'
 require 'figs'
+require 'tempfile'
 
 module SdrFriend
   class Fda
@@ -31,7 +32,7 @@ module SdrFriend
     ## Retrieves a handle -> dspace_id lookup table
     def grab_lookup_table(csv_url)
       cmd = `curl #{csv_url} -s`
-      csv = CSV.parse(cmd)
+      csv = cmd.gsub("\r","\n").split(/\n+/).map{ |x| x.split(",")}
       table = {}
       csv.each {|row| table[row[0]] = row[1]}
       return table
@@ -101,8 +102,13 @@ module SdrFriend
     ## Modify (add or replace) metadata elements on an FDA
     # record
     def alter_metadata(identifier, metadata_record)
-      dspace_id = identifier
-      cmd = cmd = `curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "rest-dspace-token: #{@token}" -d '#{JSON.generate(metadata_record)}' #{ENV["FDA_REST_ENDPOINT"]}/items/#{dspace_id}/metadata --insecure -s`
+      dspace_id = translate_handle_to_dspace_id(identifier)
+      tempfile = Tempfile.new('alter-md')
+      tempfile.write(JSON.generate(metadata_record))
+      tempfile.close
+      cmd = `curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "rest-dspace-token: #{@token}" #{ENV["FDA_REST_ENDPOINT"]}/items/#{dspace_id}/metadata --data @#{tempfile.path} --insecure -s`
+      tempfile.unlink
+      return cmd
     end
 
     def self.bitstream_url(bs_id, bs_name)
@@ -182,7 +188,6 @@ module SdrFriend
       end
     end
 
-    private
 
     def upload_bitstream_to_dspace(path_to_file, dspace_id)
       filename = File.basename(path_to_file)
@@ -195,10 +200,19 @@ module SdrFriend
       return @handle_table["http://hdl.handle.net/#{handle}"]
     end
 
-    def filepath_to_handle(filepath)
-      match = /nyu_\d{4}_\d{5}?/.match(filepath)
+    def is_upload_candidate?(filepath)
+      match = /nyu_\d{4}_\d{5}(_\w+)?\.\w+$/.match(filepath)
       if !match.nil?
-        return match[match.size - 1]
+        return true
+      else
+        return false
+      end
+    end
+
+    def filepath_to_handle(filepath)
+      match = /nyu_\d{4}_\d{5}/.match(File.basename(filepath))
+      if !match.nil?
+        return match[0]
       else
         raise 'No handle pattern detected in filename -- upload destination is ambiguous. (Filename must include "nyu_2451_12345" pattern!)'
       end

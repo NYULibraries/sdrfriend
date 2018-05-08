@@ -51,6 +51,34 @@ namespace :fda do
     puts JSON.generate(client.grab_item_metadata(args[:identifier]))
   end
 
+  desc 'Add multiple bitstreams from a folder; names must conform to handle patterns (nyu_1234_56789.zip, nyu_1234_56789_doc.zip)'
+  task :bit_batch, :bitstream_repository_path, :zip_only do |t, args|
+    client = SdrFriend::Fda.new
+    if args[:zip_only]
+      paths = Find.find(args[:bitstream_repository_path]).select{ |x| client.is_upload_candidate?(x) and x.include?(".zip")}
+    else
+      paths = Find.find(args[:bitstream_repository_path]).select{ |x| client.is_upload_candidate?(x)}
+    end
+    responses = []
+    paths.each do |path|
+      resp = client.upload_bitstream(path)
+      responses << resp
+      puts JSON.generate(resp)
+    end
+  end
+
+  desc 'Update FDA metadata with elements from GeoBlacklight records'
+  task :gbl_to_fda_metadata, :repository_path do |t, args|
+    client = SdrFriend::Fda.new
+    paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
+    paths.each do |path|
+      record = JSON.parse(File.read(path))
+      fda_set = SdrFriend::Metadata.geoblacklight_to_fda_elements(record)
+      resp = client.alter_metadata(record["layer_slug_s"],fda_set)
+      puts "Updating #{record['layer_slug_s']}; Server response: #{resp}"
+    end
+  end
+
   desc 'Add a single bitstream; <identifier> argument optional IF handle can be extracted from filename'
   task :addbit, :file_path, :identifier do |t, args|
     client = SdrFriend::Fda.new
@@ -216,12 +244,12 @@ end
 
   desc "Split-out JSON record collection file into multiple individual geoblacklight.json files"
   task :split, :json_input, :destination_path do |t, args|
-
+    puts "Not implemented yet!"
   end
 
   desc "Create a blank template CSV for collection"
   task :template, :csv_output do |t, args|
-
+    puts "Not implemented yet!"
   end
 
 
