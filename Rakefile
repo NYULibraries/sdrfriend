@@ -2,11 +2,46 @@ require "bundler/gem_tasks"
 require "rspec/core/rake_task"
 require "SdrFriend/fda"
 require "SdrFriend/metadata"
+require "SdrFriend/gdal"
+require "SdrFriend/geoserver"
 require "find"
 
 RSpec::Core::RakeTask.new(:spec)
 
 task :default => :spec
+
+namespace :gdal do
+
+  desc 'Get solr_geom (in ENVELOPE syntax) for a Shapefile that is in WGS84 / ESPG:4326'
+  task :bounding, :shapefile_path do |t, args|
+    puts SdrFriend::Gdal.shapefile_to_solr_geom(args[:shapefile_path])
+  end
+
+  desc 'Get solr_geom for all Shapefiles, in a directory or subdirectory'
+  task :bounding_many, :shapefile_repository_path do |t, args|
+    paths = Find.find(args[:shapefile_repository_path]).select{ |x| x.include?(".shp")}
+    paths.each do |path|
+      puts "#{path},#{SdrFriend::Gdal.shapefile_to_solr_geom(path)}"
+    end
+  end
+
+end
+
+namespace :geoserver do
+
+  desc 'Turn on GeoServer layers, for all records in a directory or subdirectory'
+  task :enable, :repository_path do |t, args|
+    client = SdrFriend::Geoserver.new
+    paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
+    paths.each_with_index do |path, idx|
+      rec = JSON.parse(File.read(path))
+      resp = client.enable_vector_layer(rec['layer_id_s'].gsub("sdr:",""), rec['dc_title_s'], rec['dc_rights_s'])
+      puts "Processed: ##{idx} - #{rec['layer_slug_s']}, #{rec['dc_rights_s']}; Server response: #{resp}"
+    end
+  end
+
+
+end
 
 namespace :fda do
 

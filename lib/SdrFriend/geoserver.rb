@@ -14,13 +14,21 @@ module SdrFriend
     # end
 
     def enable_vector_layer(layer_slug, title, endpoint)
+      geoserver = nil
+      if endpoint.downcase == "restricted"
+        geoserver = ENV['GEOSERVER_RESTRICTED_ENDPOINT']
+      elsif endpoint.downcase == "public"
+        geoserver = ENV['GEOSERVER_PUBLIC_ENDPOINT']
+      else
+        raise("Could not find an endpoint!")
+      end
       request = {
           featureType: {
               name: layer_slug,
               title: title
           }
       }
-      cmd = `curl -u "#{ENV['GEOSERVER_USER']}:#{ENV['GEOSERVER_PASS']}" -XPOST -H "Accept: application/json" -H "Content-Type: application/json" -d '#{JSON.generate(request)}' #{endpoint}/rest/workspaces/sdr/datastores/vector_postgis/featuretypes -s`
+      cmd = `curl -u "#{ENV['GEOSERVER_USER']}:#{ENV['GEOSERVER_PASS']}" -XPOST -H "Accept: application/json" -H "Content-Type: application/json" -d '#{JSON.generate(request)}' #{geoserver}/rest/workspaces/sdr/datastores/vector_postgis/featuretypes -s`
       return cmd
     end
 
