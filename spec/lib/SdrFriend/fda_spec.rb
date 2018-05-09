@@ -117,5 +117,19 @@ RSpec.describe SdrFriend::Fda do
     end
   end
 
+  describe "ability to communicate with FDA" do
+
+    it "is able to get PUBLIC metadata from FDA" do
+      client = SdrFriend::Fda.new
+      expect(client.grab_item_metadata("nyu-2451-36739")).to be_a(Hash)
+    end
+
+    it "is able to get PRIVATE metadata from FDA" do
+      client = SdrFriend::Fda.new
+      expect(client.grab_item_metadata("nyu-2451-37427")).to be_a(Hash)
+    end
+
+  end
+
 
 end
