@@ -1,6 +1,13 @@
 RSpec.describe SdrFriend::Fda do
 
 
+  describe "#load_table" do
+    it "can load a CSV lookup table from link specified in secrets.yml" do
+      client = SdrFriend::Fda.new(false)
+      expect{client.load_table}.not_to raise_error
+    end
+  end
+
   describe "#filepath_to_handle" do
     it "can detect handle in filepath of form '/sample/path/nyu_2451_21231.zip' " do
       client = SdrFriend::Fda.new(false)

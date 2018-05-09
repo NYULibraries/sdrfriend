@@ -4,11 +4,35 @@ require "SdrFriend/fda"
 require "SdrFriend/metadata"
 require "SdrFriend/gdal"
 require "SdrFriend/geoserver"
+require "SdrFriend/files"
 require "find"
 
 RSpec::Core::RakeTask.new(:spec)
 
 task :default => :spec
+
+namespace :files do
+
+  desc 'Create download container folders for bitstreams, given a CSV listing layers'
+  task :download_containers, :destination_path, :csv_input do |t, args|
+    client = SdrFriend::Fda.new
+    table = CSV.parse(File.read(args[:csv_input]), headers: true)
+    collection = SdrFriend::Metadata.csv_to_collection(table)
+    folder_names = collection.map{ |rec| rec['layer_slug_s'].gsub("-","_") }
+    SdrFriend::Files.make_bitstream_folders(args[:destination_path], folder_names)
+  end
+
+  desc 'Create documentation container folders for bitstreams, given a CSV listing layers'
+  task :documentation_containers, :destination_path, :csv_input do |t, args|
+    client = SdrFriend::Fda.new
+    table = CSV.parse(File.read(args[:csv_input]), headers: true)
+    collection = SdrFriend::Metadata.csv_to_collection(table)
+    folder_names = collection.map{ |rec| rec['layer_slug_s'].gsub("-","_") + "_doc" }
+    SdrFriend::Files.make_bitstream_folders(args[:destination_path], folder_names)
+  end
+
+
+end
 
 namespace :gdal do
 
@@ -67,12 +91,24 @@ namespace :fda do
     end
   end
 
-  desc 'Update FDA metadata with elements from GeoBlacklight records'
-  task :gbl_to_fda_metadata, :repository_path do |t, args|
+  # desc 'Update FDA metadata with elements from GeoBlacklight records'
+  # task :gbl_to_fda_metadata, :repository_path do |t, args|
+  #   client = SdrFriend::Fda.new
+  #   paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
+  #   paths.each do |path|
+  #     record = JSON.parse(File.read(path))
+  #     fda_set = SdrFriend::Metadata.geoblacklight_to_fda_elements(record)
+  #     resp = client.alter_metadata(record["layer_slug_s"],fda_set)
+  #     puts "Updating #{record['layer_slug_s']}; Server response: #{resp}"
+  #   end
+  # end
+
+  desc 'Update FDA metadata with elements from GeoBlacklight CSV'
+  task :gbl_to_fda_metadata, :csv_input do |t, args|
     client = SdrFriend::Fda.new
-    paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
-    paths.each do |path|
-      record = JSON.parse(File.read(path))
+    table = CSV.parse(File.read(args[:csv_input]), headers: true)
+    collection = SdrFriend::Metadata.csv_to_collection(table)
+    collection.each do |record|
       fda_set = SdrFriend::Metadata.geoblacklight_to_fda_elements(record)
       resp = client.alter_metadata(record["layer_slug_s"],fda_set)
       puts "Updating #{record['layer_slug_s']}; Server response: #{resp}"
@@ -174,15 +210,31 @@ namespace :metadata do
     end
   end
 
-  desc "Add FDA bitstream URLs to JSON records"
-  task :bithydrate, :repository_path do |t, args|
-    paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
-    collection = []
-    paths.each do |path|
-      collection << JSON.parse(File.read(path))
+  # desc "Add FDA bitstream URLs to JSON records"
+  # task :bithydrate, :repository_path do |t, args|
+  #   paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
+  #   collection = []
+  #   paths.each do |path|
+  #     collection << JSON.parse(File.read(path))
+  #   end
+  #   SdrFriend::Metadata.bitstream_hydrate(collection)
+  #   puts JSON.pretty_generate(collection)
+  # end
+
+  desc "Add FDA bitstream URLs to CSV"
+  task :bithydrate_csv, :csv_input, :csv_output do |t, args|
+    table = CSV.parse(File.read(args[:csv_input]), headers: true)
+    collection = SdrFriend::Metadata.csv_to_collection(table)
+    fda_client = SdrFriend::Fda.new
+    CSV.open(args[:csv_output], "w") do |csv|
+      puts "handle-identifier,ref:download-url,ref:documentation-url"
+      csv << ["handle-identifier","ref:download-url","ref:documentation-url"]
+      collection.each do |record|
+        row = SdrFriend::Metadata.rowwise_bitstream_hydrate(record, fda_client)
+        puts "#{row[:handle]},#{row[:download]},#{row[:codebook]}"
+        csv << [row[:handle], row[:download], row[:codebook]]
+      end
     end
-    SdrFriend::Metadata.bitstream_hydrate(collection)
-    puts JSON.pretty_generate(collection)
   end
 
   desc "Alphabetize keys in records"

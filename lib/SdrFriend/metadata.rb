@@ -166,38 +166,70 @@ module SdrFriend
       return CSV::Table.new(csv_rows)
     end
 
-    def self.bitstream_hydrate(records)
-      client = SdrFriend::Fda.new
-
-      records.each do |record|
-        add_dspace_id = false
-        if record["nyu_addl_dspace_s"]
-          id = record["nyu_addl_dspace_s"]
-        elsif record["dc_identifier_s"]
-          add_dspace_id = true
-          id = record["dc_identifier_s"]
-        else
-          raise "Unable to determine a valid identifier for record."
-        end
-
-        fda_md = client.grab_item_metadata(id)
-        if add_dspace_id
-          record["nyu_addl_dspace_s"] = fda_md['id'].to_s
-        end
-        references = JSON.parse(record['dct_references_s'])
-
-        fda_md['bitstreams'].each do |bs|
-          if /^#{record['layer_slug_s'].gsub("-","_")}\./.match(bs['name'])
-            references["http://schema.org/downloadUrl"] = SdrFriend::Fda.bitstream_url(bs['id'], bs['name'])
-          elsif /^#{record['layer_slug_s'].gsub("-","_")}_doc\./.match(bs['name'])
-            references["http://lccn.loc.gov/sh85035852"] = SdrFriend::Fda.bitstream_url(bs['id'], bs['name'])
-          end
-
-        end
-        record['dct_references_s'] = JSON.generate(references)
+    def self.rowwise_bitstream_hydrate(record, fda_client)
+      row = {
+          handle: nil,
+          download: nil,
+          codebook: nil
+      }
+      add_dspace_id = false
+      if record["nyu_addl_dspace_s"]
+        id = record["nyu_addl_dspace_s"]
+      elsif record["dc_identifier_s"]
+        add_dspace_id = true
+        id = record["dc_identifier_s"]
+      else
+        raise "Unable to determine a valid identifier for record."
       end
 
+      fda_md = fda_client.grab_item_metadata(id)
+      if add_dspace_id
+        record["nyu_addl_dspace_s"] = fda_md['id'].to_s
+      end
+      references = JSON.parse(record['dct_references_s'])
+      row[:handle] = record['dc_identifier_s']
+      fda_md['bitstreams'].each do |bs|
+        if /^#{record['layer_slug_s'].gsub("-","_")}\./.match(bs['name'])
+          row[:download] = SdrFriend::Fda.bitstream_url(bs['id'], bs['name'])
+        elsif /^#{record['layer_slug_s'].gsub("-","_")}_doc\./.match(bs['name'])
+          row[:codebook] = SdrFriend::Fda.bitstream_url(bs['id'], bs['name'])
+        end
+      end
+      return row
     end
+
+    # def self.bitstream_hydrate(records)
+    #   client = SdrFriend::Fda.new
+    #
+    #   records.each do |record|
+    #     add_dspace_id = false
+    #     if record["nyu_addl_dspace_s"]
+    #       id = record["nyu_addl_dspace_s"]
+    #     elsif record["dc_identifier_s"]
+    #       add_dspace_id = true
+    #       id = record["dc_identifier_s"]
+    #     else
+    #       raise "Unable to determine a valid identifier for record."
+    #     end
+    #
+    #     fda_md = client.grab_item_metadata(id)
+    #     if add_dspace_id
+    #       record["nyu_addl_dspace_s"] = fda_md['id'].to_s
+    #     end
+    #     references = JSON.parse(record['dct_references_s'])
+    #
+    #     fda_md['bitstreams'].each do |bs|
+    #       if /^#{record['layer_slug_s'].gsub("-","_")}\./.match(bs['name'])
+    #         references["http://schema.org/downloadUrl"] = SdrFriend::Fda.bitstream_url(bs['id'], bs['name'])
+    #       elsif /^#{record['layer_slug_s'].gsub("-","_")}_doc\./.match(bs['name'])
+    #         references["http://lccn.loc.gov/sh85035852"] = SdrFriend::Fda.bitstream_url(bs['id'], bs['name'])
+    #       end
+    #
+    #     end
+    #     record['dct_references_s'] = JSON.generate(references)
+    #   end
+    #
+    # end
 
     def self.alphabetize_keys(records)
       collection = []
