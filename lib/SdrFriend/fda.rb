@@ -200,7 +200,16 @@ module SdrFriend
       return @handle_table["http://hdl.handle.net/#{handle}"]
     end
 
-    def is_upload_candidate?(filepath)
+    def self.folder_fits_upload_format(folder)
+      match = /nyu_\d{4}_\d{5}(_\w+)?$/.match(folder)
+      if !match.nil?
+        return true
+      else
+        return false
+      end
+    end
+
+    def self.is_upload_candidate?(filepath)
       match = /nyu_\d{4}_\d{5}(_\w+)?\.\w+$/.match(filepath)
       if !match.nil?
         return true
@@ -209,7 +218,7 @@ module SdrFriend
       end
     end
 
-    def filepath_to_handle(filepath)
+    def self.filepath_to_handle(filepath)
       match = /nyu_\d{4}_\d{5}/.match(File.basename(filepath))
       if !match.nil?
         return match[0]

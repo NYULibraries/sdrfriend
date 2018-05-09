@@ -31,6 +31,11 @@ namespace :files do
     SdrFriend::Files.make_bitstream_folders(args[:destination_path], folder_names)
   end
 
+  desc 'Create zips of all containers residing in a folder'
+  task :zip_bitstreams, :folder_path do |t, args|
+    SdrFriend::Files.zip_bitstream_folders(args[:folder_path])
+  end
+
 
 end
 

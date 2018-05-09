@@ -10,18 +10,36 @@ RSpec.describe SdrFriend::Fda do
 
   describe "#filepath_to_handle" do
     it "can detect handle in filepath of form '/sample/path/nyu_2451_21231.zip' " do
-      client = SdrFriend::Fda.new(false)
-      expect(client.send :filepath_to_handle, "/sample/path/nyu_2451_21231.zip").to eq("nyu_2451_21231")
+      expect(SdrFriend::Fda.filepath_to_handle("/sample/path/nyu_2451_21231.zip")).to eq("nyu_2451_21231")
     end
 
     it "can detect handle in filepath of form '/sample/path/nyu_2451_21231_original.zip' " do
-      client = SdrFriend::Fda.new(false)
-      expect(client.send :filepath_to_handle, "/sample/path/nyu_2451_21231_original.zip").to eq("nyu_2451_21231")
+      expect(SdrFriend::Fda.filepath_to_handle("/sample/path/nyu_2451_21231_original.zip")).to eq("nyu_2451_21231")
     end
 
     it "doesn't try to grab a handle from a filepath if one does not exist" do
-      client = SdrFriend::Fda.new(false)
-      expect {client.send :filepath_to_handle, "/sample/path/documentation.zip"}.to raise_error(RuntimeError)
+      expect {SdrFriend::Fda.filepath_to_handle("/sample/path/documentation.zip")}.to raise_error(RuntimeError)
+    end
+  end
+
+  describe "#folder_fits_upload_format" do
+    it "detects folders fitting the pattern of `nyu_1234_56789`" do
+      expect(SdrFriend::Fda.folder_fits_upload_format("nyu_2451_56789")).to eq(true)
+    end
+    it "detects folders fitting the pattern of `nyu_1234_56789_doc`" do
+      expect(SdrFriend::Fda.folder_fits_upload_format("nyu_2451_56789_doc")).to eq(true)
+    end
+    it "detects folders fitting the pattern of `nyu_1234_56789_anything`" do
+      expect(SdrFriend::Fda.folder_fits_upload_format("nyu_1234_56789_anything")).to eq(true)
+    end
+    it "rejects folders fitting the pattern of `nyu_1234_56789_`" do
+      expect(SdrFriend::Fda.folder_fits_upload_format("nyu_2451_56789_")).to eq(false)
+    end
+    it "rejects folders fitting the pattern of `nyu-1234-56789`" do
+      expect(SdrFriend::Fda.folder_fits_upload_format("nyu-1234-56789")).to eq(false)
+    end
+    it "rejects files fitting the pattern of `nyu_1234_56789.zip`" do
+      expect(SdrFriend::Fda.folder_fits_upload_format("nyu_2451_56789.zip")).to eq(false)
     end
   end
 
@@ -55,32 +73,25 @@ RSpec.describe SdrFriend::Fda do
 
   describe "#is_upload_candidate?" do
     it "approves filepaths of format '/whatever/nyu_2451_12345.zip'" do
-      client = SdrFriend::Fda.new(false)
-      expect(client.is_upload_candidate?("/my/nyu_2451_12345.zip")).to eq(true)
+      expect(SdrFriend::Fda.is_upload_candidate?("/my/nyu_2451_12345.zip")).to eq(true)
     end
     it "approves filepaths of format '/whatever/nyu_2451_12345_doc.zip'" do
-      client = SdrFriend::Fda.new(false)
-      expect(client.is_upload_candidate?("/whatever/nyu_2451_12345_doc.zip")).to eq(true)
+      expect(SdrFriend::Fda.is_upload_candidate?("/whatever/nyu_2451_12345_doc.zip")).to eq(true)
     end
     it "approves filepaths of format '/whatever/nyu_2451_12345_anything.zip'" do
-      client = SdrFriend::Fda.new(false)
-      expect(client.is_upload_candidate?("/whatever/nyu_2451_12345_anything.zip")).to eq(true)
+      expect(SdrFriend::Fda.is_upload_candidate?("/whatever/nyu_2451_12345_anything.zip")).to eq(true)
     end
     it "rejects filepaths of format '/whatever/nyu_2451_12345_doc'" do
-      client = SdrFriend::Fda.new(false)
-      expect(client.is_upload_candidate?("/whatever/nyu_2451_12345_doc")).to eq(false)
+      expect(SdrFriend::Fda.is_upload_candidate?("/whatever/nyu_2451_12345_doc")).to eq(false)
     end
     it "rejects filepaths of format '/whatever/nyu_2451_12345_doc.'" do
-      client = SdrFriend::Fda.new(false)
-      expect(client.is_upload_candidate?("/whatever/nyu_2451_12345_doc.")).to eq(false)
+      expect(SdrFriend::Fda.is_upload_candidate?("/whatever/nyu_2451_12345_doc.")).to eq(false)
     end
     it "rejects filepaths of format '/whatever/clearly_wrong.zip'" do
-      client = SdrFriend::Fda.new(false)
-      expect(client.is_upload_candidate?("/whatever/clearly_wrong.zip")).to eq(false)
+      expect(SdrFriend::Fda.is_upload_candidate?("/whatever/clearly_wrong.zip")).to eq(false)
     end
     it "rejects filepaths of format '/whatever/nyu_1234_567890.zip'" do
-      client = SdrFriend::Fda.new(false)
-      expect(client.is_upload_candidate?("/whatever/nyu_1234_567890.zip")).to eq(false)
+      expect(SdrFriend::Fda.is_upload_candidate?("/whatever/nyu_1234_567890.zip")).to eq(false)
     end
   end
 
