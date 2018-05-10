@@ -84,9 +84,9 @@ namespace :fda do
   task :bit_batch, :bitstream_repository_path, :zip_only do |t, args|
     client = SdrFriend::Fda.new
     if args[:zip_only]
-      paths = Find.find(args[:bitstream_repository_path]).select{ |x| client.is_upload_candidate?(x) and x.include?(".zip")}
+      paths = Find.find(args[:bitstream_repository_path]).select{ |x| SdrFriend::Fda.is_upload_candidate?(x) and x.include?(".zip")}
     else
-      paths = Find.find(args[:bitstream_repository_path]).select{ |x| client.is_upload_candidate?(x)}
+      paths = Find.find(args[:bitstream_repository_path]).select{ |x| SdrFriend::Fda.is_upload_candidate?(x)}
     end
     responses = []
     paths.each do |path|
