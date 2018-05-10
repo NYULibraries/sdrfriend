@@ -121,7 +121,7 @@ module SdrFriend
       filename = File.basename(path_to_file)
       if dspace_id.nil?
         ## Ascertain handle
-        handle = filepath_to_handle(path_to_file)
+        handle = Fda.filepath_to_handle(path_to_file)
         target_id = translate_handle_to_dspace_id(handle)
       else
         target_id = dspace_id
