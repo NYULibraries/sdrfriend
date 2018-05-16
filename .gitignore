@@ -9,6 +9,8 @@
 /.idea
 /.idea/*
 
+.DS_Store
+
 # rspec failure tracking
 .rspec_status
 # Ignore application configuration
