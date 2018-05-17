@@ -58,14 +58,27 @@ end
 
 namespace :geoserver do
 
-  desc 'Turn on GeoServer layers, for all records in a directory or subdirectory'
-  task :enable, :repository_path do |t, args|
+  # desc 'Turn on GeoServer layers, for all records in a directory or subdirectory'
+  # task :enable, :repository_path do |t, args|
+  #   client = SdrFriend::Geoserver.new
+  #   paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
+  #   paths.each_with_index do |path, idx|
+  #     rec = JSON.parse(File.read(path))
+  #     resp = client.enable_vector_layer(rec['layer_id_s'].gsub("sdr:",""), rec['dc_title_s'], rec['dc_rights_s'])
+  #     puts "Processed: ##{idx} - #{rec['layer_slug_s']}, #{rec['dc_rights_s']}; Server response: #{resp}"
+  #   end
+  # end
+
+  desc 'Turn on GeoServer layers from a CSV input'
+  task :enable, :csv_input do |t, args|
     client = SdrFriend::Geoserver.new
-    paths = Find.find(args[:repository_path]).select{ |x| x.include?("geoblacklight.json")}
-    paths.each_with_index do |path, idx|
-      rec = JSON.parse(File.read(path))
-      resp = client.enable_vector_layer(rec['layer_id_s'].gsub("sdr:",""), rec['dc_title_s'], rec['dc_rights_s'])
-      puts "Processed: ##{idx} - #{rec['layer_slug_s']}, #{rec['dc_rights_s']}; Server response: #{resp}"
+    table = CSV.parse(File.read(args[:csv_input]), headers: true)
+    collection = SdrFriend::Metadata.csv_to_collection(table)
+    collection.each do |record|
+      key = record['layer_id_s'].gsub("sdr:","")
+      puts "Enabling: #{key}"
+      resp = client.enable_vector_layer(key, rec['dc_title_s'], rec['dc_rights_s'])
+      puts resp
     end
   end
 
