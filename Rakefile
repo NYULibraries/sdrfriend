@@ -77,7 +77,7 @@ namespace :geoserver do
     collection.each do |record|
       key = record['layer_id_s'].gsub("sdr:","")
       puts "Enabling: #{key}"
-      resp = client.enable_vector_layer(key, rec['dc_title_s'], rec['dc_rights_s'])
+      resp = client.enable_vector_layer(key, record['dc_title_s'], record['dc_rights_s'])
       puts resp
     end
   end
