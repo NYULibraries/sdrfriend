@@ -1,41 +1,12 @@
 # SdrFriend
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/SdrFriend`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+SdrFriend is a set of rake tasks based on the [RSpec](http://rspec.info/) template that NYU Libraries uses to interface with the various parts of the Spatial Data Infrastructure. Its main components are specific to NYU's deployment of DSpace and Geoserver, but other components may be useful to others in the geospatial data community.
 
 ## Installation
 
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'SdrFriend'
-```
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
+SdrFriend requires Ruby. In order to install SdrFriend, clone the repository to your hard drive. Then, run:
 
     $ gem install SdrFriend
-    
-## Using it as a command line interface (via Rake)
-
-```bash
-rake fda:get["nyu_2451_34626"]
-```
-
-
-## Using it as a library
-
-### SdrFriend::Fda
-This provides an interface to the Faculty Digital Archive's DSpace REST API.
-
-```ruby
-require 'SdrFriend/fda'
-client = SdrFriend::Fda.new
-```
 
 ## Development
 
@@ -45,12 +16,8 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/SdrFriend. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/NYULibraries/SdrFriend. This project is intended to be a safe, welcoming space for collaboration.
 
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-## Code of Conduct
-
-Everyone interacting in the SdrFriend project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/SdrFriend/blob/master/CODE_OF_CONDUCT.md).
